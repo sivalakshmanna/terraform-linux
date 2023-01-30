@@ -1,0 +1,53 @@
+ provider "aws" {
+  region = "ap-south-1"
+}
+resource "aws_instance" "dev" {
+  ami           = "ami-074dc0a6f6c764218"
+  instance_type = "t2.micro" 
+  count         = 3
+  tags = {
+    Name  = "Terraform-${count.index + 1}"----> it gives names like terraform1 terrraform2 terraform3
+  }
+}
+
+resource "aws_iam_user" "lb" {
+  name  = "loadbalancer.${count.index}"---> it gives names like  loadbalencer0 loadbalancer1 loadbalancer3
+  count = 5 
+  path  = "/system/"
+}
+
+
+###### ANOTHER WAY #######
+
+ provider "aws" {
+  region = "ap-south-1"
+}
+resource "aws_instance" "dev" {
+  ami           = "ami-074dc0a6f6c764218"
+  instance_type = "t2.micro" 
+  count         = 3
+  tags = {
+    Name  = var.instance[count.index]---> it gives coustum names
+  }
+}
+variable "instance"{
+   type = list 
+   default = [ "dev-instance", "prod-instance", "uat-instance"]
+}
+  
+  
+  
+  ###### OR ####### two ways to create
+  
+  resource "aws_instance" "dev" {
+  ami           = "ami-074dc0a6f6c764218"
+  instance_type = "t2.micro" 
+  count         = 3
+  tags = {
+    Name  =element(var.instance,count.index)---> it gives coustum names
+  }
+}
+variable "instance"{
+   type = list 
+   default = [ "dev-instance", "prod-instance", "uat-instance"]
+}

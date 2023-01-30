@@ -1,0 +1,118 @@
+provider "aws" {
+  region = "ap-south-1"
+
+}
+resource "aws_instance" "prod" {
+  ami           = "ami-0cca134ec43cf708f"
+  instance_type = "t2.micro"
+  key_name      = "sivaterraform"
+  provisioner "file" {
+    source      = "/root/file/main.tf"
+    destination = "/tmp/main.tf"
+  }
+  connection {
+    type        = "ssh"
+    user        = "ec2-user"
+    private_key = file("./sivaterraform.pem")
+    host        = self.public_ip
+  }
+
+}
+
+
+
+################vpc-and-instance-copy-file############
+
+
+provider "aws" {
+  region = "ap-south-1"
+}
+resource "aws_vpc" "custom_vpc" {
+  cidr_block       = "10.0.0.0/16"
+  instance_tenancy = "default"
+  tags = {
+    Name = "terraform-vpc"
+  }
+}
+resource "aws_internet_gateway" "ig" {
+  vpc_id = aws_vpc.custom_vpc.id
+}
+resource "aws_route_table" "edu-route-table" {
+  vpc_id = aws_vpc.custom_vpc.id
+  route {
+    cidr_block = "0.0.0.0/0"
+    # this means all traffic is allowed
+    gateway_id = aws_internet_gateway.ig.id
+  }
+  route {
+    ipv6_cidr_block = "::/0"
+    gateway_id      = aws_internet_gateway.ig.id
+  }
+  tags = {
+    Name = "edureka"
+  }
+}
+resource "aws_subnet" "subnet-1" {
+  vpc_id            = aws_vpc.custom_vpc.id
+  cidr_block        = "10.0.1.0/24"
+  availability_zone = "ap-south-1a"
+
+  tags = {
+    Name = "edu-subnet"
+  }
+}
+resource "aws_route_table_association" "a" {
+  subnet_id      = aws_subnet.subnet-1.id
+  route_table_id = aws_route_table.edu-route-table.id
+}
+resource "aws_security_group" "allow_web" {
+  name        = "allow_web_traffic"
+  description = "Allow Web inbound traffic"
+  vpc_id      = aws_vpc.custom_vpc.id
+  ingress {
+    description = "HTTPS"
+    from_port   = 22
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  tags = {
+    Name = "allow_web"
+  }
+}
+resource "aws_network_interface" "web-server-nic" {
+  subnet_id       = aws_subnet.subnet-1.id
+  private_ips     = ["10.0.1.50"]
+  security_groups = [aws_security_group.allow_web.id]
+}
+resource "aws_eip" "one" {
+  vpc                       = true
+  network_interface         = aws_network_interface.web-server-nic.id
+  associate_with_private_ip = "10.0.1.50"
+  depends_on                = [aws_internet_gateway.ig]
+}
+resource "aws_instance" "web-server-instance1" {
+  ami               = "ami-0cca134ec43cf708f"
+  instance_type     = "t2.micro"
+  availability_zone = "ap-south-1a"
+  key_name          = "sivaterraform"
+  depends_on        = [aws_eip.one]
+  network_interface {
+    device_index         = 0
+    network_interface_id = aws_network_interface.web-server-nic.id
+  }
+  provisioner "file" {
+    source      = "/root/vpc/main.tf"
+    destination = "/tmp/main.tf"
+  }
+  connection {
+    type        = "ssh"
+    user        = "ec2-user"
+    private_key = file("./sivaterraform.pem")
+    host        = self.public_ip
+  }
+
+  tags = {
+    Name = "web-server"
+  }
+}

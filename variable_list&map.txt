@@ -1,0 +1,26 @@
+provider "aws" {
+  region = "ap-south-1"
+}
+resource "aws_instance" "dev" {
+  ami           = "ami-074dc0a6f6c764218"
+  instance_type = var.list[0]  --->if you give 0 it creates m5.large instance if you give 1 its create m5.xlarge instance if you give 2 its creates t2.medium instance
+}
+variable "list" {
+  type = list
+  default = ["m5.large","m5.xlarge","t2.medium"]
+}
+ 
+ fetching data from maps
+ 
+ esource "aws_instance" "dev" {
+  ami           = "ami-074dc0a6f6c764218"
+  instance_type = var.maps["prod"]  --->you give prod it creates instance t2.micro if you give dev it creates instance t2.nano if you give uat it creates instance t2.small
+}
+variable "maps" {
+  type = map
+  default = {
+    prod   = "t2.micro"
+	dev    = "t2.nano"
+	uat    = "t2.small"
+  }
+}

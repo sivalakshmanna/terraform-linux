@@ -1,0 +1,28 @@
+provider "aws" {
+  region = "ap-south-1"
+}
+
+resource "aws_instance" "picr" {
+  ami           = var.amipicr
+  instance_type = lookup(var.instancetype,terraform.workspace)
+}
+variable "instancetype" {
+  type = map
+  default = {
+    default = "t2.micro"
+    prod    = "t2.nano"
+    dev     = "t2.medium"
+    uat     = "t2.large"
+  }
+}
+variable "amipicr" {
+  default = "ami-074dc0a6f6c764218"
+}
+
+
+terraform workspace -h ---> this command help terraform workspace 
+terraform workspace show ---> this comand helps to show the terraform workspaces
+terraform workspace new prod ---> this command help to create terraform  prod workspace and switch to prajent workspace to new created workspace
+terraform workspace new dev
+terraform workspace new uat
+terraform workspace select prod ---> switch projent workspace to selected workspace

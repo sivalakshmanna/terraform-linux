@@ -1,0 +1,39 @@
+provider "aws" {
+  region = "ap-south-1"
+}
+resource "aws_instance" "dev" {
+  ami           = lookup(var.ami, var.aws_region)
+  instance_type = lookup(var.instancetype, var.env)
+  count         = lookup(var.number, var.env)
+}
+variable "number" {
+  type = map 
+  default = {
+   "prod" = "3"
+   "dev"  = "5"
+   "uat"  = "4"
+  }
+}
+variable "instancetype" {
+   type = map
+   default = {
+      "prod" = "t2.medium"
+	  "uat"  = "t2.nano"
+      "dev" = "t2.micro"
+}
+}
+variable "env" {
+ default = "prod" ---> defoult value you give prod it creates t2.medium instance create and you give dev it creates t2.micro instance it create
+}
+variable "ami" {
+  type = map(any)
+
+  default = {
+    "us-east-1" = "ami-04169656fea786776"
+    "us-west-1" = "ami-006fce2a9625b177f"
+  }
+}
+variable "aws_region" {
+  default = "us-east-1"
+}
+

@@ -1,0 +1,53 @@
+provider "aws" {
+  region = lookup(var.regions, terraform.workspace)
+}
+
+resource "aws_instance" "picr" {
+  ami           = lookup(var.ami, terraform.workspace)
+  instance_type = lookup(var.instancetype, terraform.workspace)
+  count         = lookup(var.number, terraform.workspace)
+}
+variable "instancetype" {
+  type = map(any)
+  default = {
+    prod    = "t2.nano"
+    dev     = "t2.medium"
+    uat     = "t2.large"
+  }
+}
+variable "number" {
+  type = map(any)
+  default = {
+    "prod" = 4
+    "dev"  = 2
+    "uat"  = 3
+  }
+}
+
+variable "regions" {
+  type = map(any)
+  default = {
+    "prod" = "ap-south-1"
+    "dev"  = "us-east-1"
+    "uat"  = "us-west-1"
+  }
+}
+variable "ami" {
+  type = map(any)
+
+  default = {
+    "dev"  = "ami-0b5eea76982371e91"
+    "uat"  = "ami-00d8a762cb0c50254"
+    "prod" = "ami-0cca134ec43cf708f"
+  }
+}
+variable "env" {
+  type = map(any)
+
+  default = {
+    "dev"  = "ami-0b5eea76982371e91"
+    "uat"  = "ami-00d8a762cb0c50254"
+    "prod" = "ami-0cca134ec43cf708f"
+  }
+}
+

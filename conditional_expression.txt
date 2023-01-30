@@ -1,0 +1,114 @@
+provider "aws" {
+  region = "ap-south-1"
+}
+resource "aws_instance" "dev" {
+  ami           = "ami-074dc0a6f6c764218"
+  instance_type = "t2.micro"
+  count = var.istest == true ? 1 : 0
+}
+resource "aws_instance" "prod" {
+  ami           = "ami-074dc0a6f6c764218"
+  instance_type = "t2.medium"
+  count = var.istest == false ? 1 : 0
+}
+
+###create variables file 
+variable "istest" {}
+
+
+##### create terraform.tfvars
+istest = true (or) false ---> if you give true it creates dev instance create and if you give false it creates prod environment
+
+
+
+
+######## EXPERIMENT ############
+
+provider "aws" {
+  region = "ap-south-1"
+}
+resource "aws_instance" "dev" {
+  ami           = lookup(var.ami, var.aws_region)
+  instance_type = lookup(var.instancetype, var.env)
+  count         = var.istest == true ? 1 : 0
+}
+resource "aws_instance" "prod" {
+  ami           = lookup(var.ami, var.aws_region)
+  instance_type = lookup(var.instancetype, var.env)
+  count         = var.istest == false ? 1 : 0
+}
+variable "instancetype" {
+   type = map
+   default = {
+      "prod" = "t2.medium"
+       "dev" = "t2.micro"
+}
+}
+variable "env" {
+ default = "prod" ---> defoult value you give prod it creates t2.medium instance create and you give dev it creates t2.micro instance it create
+}
+variable "ami" {
+  type = map(any)
+
+  default = {
+    "us-east-1" = "ami-04169656fea786776"
+    "us-west-1" = "ami-006fce2a9625b177f"
+  }
+}
+variable "aws_region" {
+  default = "us-east-1"
+}
+
+###create variables file
+variable "istest" {}
+
+##### create terraform.tfvars
+istest = true (or) false ---> if you give true it creates dev instance create and if you give false it creates prod environment
+
+###########EXPERIMENT 2 ##########
+provider "aws" {
+  region = lookup(var.regions, var.env)
+}
+resource "aws_instance" "dev" {
+  ami           = lookup(var.ami, var.env)
+  instance_type = lookup(var.instancetype, var.env)
+  count         = lookup(var.count, var.env)
+}
+variable "count" {
+  type = map 
+  default = {
+   "prod" = "3"
+   "uat"  = "4"
+  }
+}
+variable "instancetype" {
+   type = map
+   default = {
+      "prod" = "t2.medium"
+       "dev" = "t2.micro"
+}
+}
+variable "env" {
+ default = "prod" ---> defoult value you give prod it creates t2.medium instance create and you give dev it creates t2.micro instance it create
+}
+variable "ami" {
+  type = map(any)
+
+  default = {
+    "dev"  = "ami-0b5eea76982371e91"
+    "prod" = "ami-0cca134ec43cf708f"
+}
+variable "region" {
+  type = map
+   default = {
+      "prod" = "ap-south-1"
+    "dev"  = "us-east-1"
+}
+}
+
+###create variables file
+variable "istest" {}
+
+##### create terraform.tfvars
+istest = true (or) false ---> if you give true it creates dev instance create and if you give false it creates prod environment
+

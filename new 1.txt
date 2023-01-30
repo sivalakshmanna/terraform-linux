@@ -1,0 +1,69 @@
+resource "aws_vpc" "my_vpc" {
+  cidr_block = "172.16.0.0/16"
+
+  tags = {
+    Name = "tf-example"
+  }
+}
+
+resource "aws_subnet" "my_subnet" {
+  vpc_id                  = aws_vpc.my_vpc.id
+  cidr_block              = "172.16.10.0/24"
+  availability_zone       = "us-east-1a"
+  map_public_ip_on_launch = true
+}
+resource "aws_security_group" "allow_tls" {
+  name        = "allow_tls"
+  description = "Allow TLS inbound traffic"
+  vpc_id      = "aws_vpc.my_vpc.id"
+
+  ingress {
+    description = "TLS from VPC"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+
+  }
+}
+resource "aws_network_interface" "test" {
+  subnet_id       = "aws_subnet.public_a.id"
+  private_ips     = ["10.0.0.50"]
+  security_groups = ["aws_security_group.allow_tls"]
+}
+resource "aws_instance" "prod" {
+  ami           = "ami-0cca134ec43cf708f"
+  instance_type = "t2.micro"
+  key_name      = "sivaterraform"
+  network_interface {
+    network_interface_id = "aws_network_interface.test.id"
+    device_index         = 0
+  }
+  provisioner "file" {
+    source      = "/root/file/main.tf"
+    destination = "/tmp/"
+  }
+  connection {
+    type        = "ssh"
+    user        = "ec2-user"
+    private_key = file("./sivaterraform.pem")
+    host        = self.public_ip
+  }
+
+}
+ Error: creating EC2 Network Interface: InvalidSecurityGroupID.NotFound: The securityGroup ID 'aws_security_group.allow_tls1' does not exist
+│       status code: 400, request id: 4f9725e9-e0a7-4a27-afc9-212f3a7c6d1b
+│
+│   with aws_network_interface.test,
+│   on main.tf line 32, in resource "aws_network_interface" "test":
+│   32: resource "aws_network_interface" "test" {
+│
+╵
+╷
+│ Error: creating EC2 Instance: InvalidNetworkInterfaceId.Malformed: Invalid id: "aws_network_interface.test.id" (expecting "eni-...")
+│       status code: 400, request id: 41038e63-12cd-473f-b350-3372d889c1b4
+│
+│   with aws_instance.prod,
+│   on main.tf line 37, in resource "aws_instance" "prod":
+│   37: resource "aws_instance" "prod" {
+│
